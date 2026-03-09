@@ -659,7 +659,7 @@ system.maxB1=2000;
        % end                                                                %  comment for interleaved acquisition                
                                                                             
  % end                                                                      %  comment for interleaved acquisition
-                                                                           
+      return                                                                %  uncomment for interleaved acquisition                                                                     
     acqP.necho=nPEecho; %reset number of echoes
      toc
     
@@ -717,7 +717,3 @@ system.maxB1=2000;
 toc
                                                                             end
 %end
-% [~, pns_n, pns_c, tpns]=seq.calcPNS('MP_GPA_K2309_2250V_951A_AS82.asc'); % prisma
-% [pns_ok, pns_n, pns_c, tpns]=seq.calcPNS('MP_GradSys_P034_X60.asc'); % Cima.X PNS
-% [~, pns_n, pns_c, tpns]=seq.calcPNS('MP_GPA_K2309_2250V_951A_AS82_prisma.asc'); % prisma
-

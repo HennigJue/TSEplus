@@ -790,7 +790,5 @@ for kseq=12:21                                                               %  
         %fig=seq.plot('TimeRange',[0 0.1],'timeDisp','ms','stacked',1);
     end
 end
-% [~, pns_n, pns_c, tpns]=seq.calcPNS('MP_GPA_K2309_2250V_951A_AS82.asc'); % prisma
-% [pns_ok, pns_n, pns_c, tpns]=seq.calcPNS('MP_GradSys_P034_X60.asc'); % Cima.X PNS
-% [~, pns_n, pns_c, tpns]=seq.calcPNS('MP_GPA_K2309_2250V_951A_AS82_prisma.asc'); % prisma
+
 toc

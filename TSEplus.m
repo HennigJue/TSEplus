@@ -693,8 +693,5 @@ for kseq=1                                                                  %  c
 end
 
 toc
-   
-% [~, pns_n, pns_c, tpns]=seq.calcPNS('MP_GPA_K2309_2250V_951A_AS82.asc'); % prisma
-% [pns_ok, pns_n, pns_c, tpns]=seq.calcPNS('MP_GradSys_P034_X60.asc'); % Cima.X PNS
-% [~, pns_n, pns_c, tpns]=seq.calcPNS('MP_GPA_K2309_2250V_951A_AS82_prisma.asc'); % prisma
+ 
 
