@@ -42,7 +42,8 @@ if(plotflag(5)=='1')
 end
 
 %% Write to file
-
+for kseq=1:2
+    TSEplus_ileave;
 % The sequence is written to file in compressed form according to the file
 % format specification using the |write| method.
 if(~exist('seqno')), seqno=1; end
@@ -50,10 +51,11 @@ seqname=strcat('TSE_',num2str(seqno));
 seq.write(strcat(seqname,'.seq'));
 seqno=seqno+1;
 save(seqname,'system','pulseflag_ex','pulseflag_ref','acqP','acq');
+
 %%
 
 if(plotflag(6)=='1')
     fig=seq.plot('TimeRange',[TRfill TRfill+0.02],'timeDisp','ms','stacked',1);
 end
-
+end
 toc
