@@ -1,5 +1,22 @@
 %% Create a TSE sequence and export for execution
 %
+% The |Sequence| class provides functionality to create magnetic
+% resonance sequences (MRI or NMR) from basic building blocks.
+%
+% This provides an implementation of the open file format for MR sequences
+% described here: http://pulseq.github.io/specification.pdf
+%
+% This example performs the following steps:
+%
+% # Create slice selective RF pulse for imaging.
+% # Create readout gradient and phase encode strategy.
+% # Loop through phase encoding and generate sequence blocks.
+% # Write the sequence to an open file format suitable for execution on a
+% scanner.
+%
+%   Juergen Hennig <juergen.hennig@uniklinik-freiburg.de>
+%   Maxim Zaitsev  <maxim.zaitsev@uniklinik-freiburg.de>
+%
 % For descroption of parameters see manual
 
 %% Instantiation and gradient limits
@@ -27,10 +44,10 @@ sysDif = mr.opts('MaxGrad',60, 'GradUnit', 'mT/m', ...
 system.maxB1=2000;
 %%
 % A new sequence object is created by calling the class constructor.
-nseq=1;                                                                     %  comment for interleaved acquisition
-for kseq=1                                                                  %  comment for interleaved acquisition
-    seq=mr.Sequence(system);                                                %  comment for interleaved acquisition
-    if(runseq==1), load('TSE_.mat');                                        
+%nseq=10;                                                                   %  comment for interleaved acquisition                                                          
+%for kseq=1                                                                 %  comment for interleaved acquisition
+%   seq=mr.Sequence(system);                                                %  comment for interleaved acquisition
+    if(runseq==1), load('TSE_.mat');
     else
         
         acqP.T2prep='off';
@@ -41,13 +58,13 @@ for kseq=1                                                                  %  c
         %% Sequence events
         % Some sequence parameters are defined using standard MATLAB variables
         acqP.fov=240e-3;
-        acqP.Nx=320;        acqP.Ny=200;        acqP.PEfac=acqP.Nx/acqP.Ny; %=1:same fov; =acqP.Nx/acqP.Ny:same res
+        acqP.Nx=320;        acqP.Ny=320;        acqP.PEfac=acqP.Nx/acqP.Ny; %=1:same fov; =acqP.Nx/acqP.Ny:same res
         acqP.necho=20;
         acqP.samplingTime= 4.8e-3;                                           %should be a multiple of Nx in microseconds
         acqP.NSlices=1;     acqP.sliceGAP=3;  acqP.sliceThickness=2e-3;
         acqP.flipref=90;   acqP.flipflag=4;
         acqP.TE=10e-3;      acqP.TEeff=100e-3;   acqP.TEprep=40e-3; acqP.dTE=0.0e-3;
-        acqP.TR=6;       acqP.TI=0e-3;       acqP.TImod=1;
+        acqP.TR=0.3;       acqP.TI=0e-3;       acqP.TImod=1;
         acqP.HF_fac=0;      acqP.PEref=20;       acqP.GR_fac=1;
         acqP.PEtype='centric_s';    acqP.PEover=0;
         acqP.nDummy=0;  % =0: dummy scan will be performed
@@ -82,7 +99,7 @@ for kseq=1                                                                  %  c
         acq.GSSEfac=1;
         acq.GSIRFac=1;
         acq.fspR=0.5;
-        acq.fspS=0.8;
+        acq.fspS=0.5;
         acq.spoilermode='area';
         %slice order factor
         if(nseq>1), myTSE_para;  end
@@ -157,7 +174,6 @@ for kseq=1                                                                  %  c
     GSref.area=acq.GSrefFac*GSref.area;
     acq.GSref=GSref.amplitude;
     refenvelope=rfref.signal;
-    %return
     %%
     if(strcmp(acq.sigpy,'on'))
         [rfrefSE, gzrefSE] = mr.makeSLRpulse(pi,'Duration',acq.tRefSE,'PhaseOffset',rfref_phase,...
@@ -218,7 +234,10 @@ for kseq=1                                                                  %  c
         acqP.nDummy=0;
     else
         TI_dur=0;
+
     end
+
+
 
     %%
     %%% Readout gradient
@@ -240,6 +259,9 @@ for kseq=1                                                                  %  c
     end
     AGRspr=GRspr.area;
 
+
+
+
     %%
     %%% Phase encoding
     % To move the $k$-space trajectory away from 0 prior to the readout a
@@ -247,6 +269,7 @@ for kseq=1                                                                  %  c
     % select gradient is required.acqP.wav
 
     nex=floor(acqP.Ny/acqP.necho);
+
     Ny0=acqP.Ny;
     acqP.PEorder=[];acqP.PEcount=[];acqP.PEindex=[];
     clear nexc;
@@ -545,7 +568,7 @@ for kseq=1                                                                  %  c
    
     %% Define sequence blocks
     % Next, the blocks are put together to form the sequence                
-    for kex=acqP.nDummy:nex % MZ: we start at 0 to have one dummy           %  comment for interleaved acquisition
+    %for kex=acqP.nDummy:nex % MZ: we start at 0 to have one dummy           %  comment for interleaved acquisition
         for s=1:acqP.NSlices
             rfex.freqOffset=GSex.amplitude*acqP.sliceGAP*acqP.sliceThickness*acqP.OSlices(s);
             rfref.freqOffset=GSref.amplitude*acqP.sliceGAP*acqP.sliceThickness*acqP.OSlices(s);
@@ -631,17 +654,17 @@ for kseq=1                                                                  %  c
                 seq.addBlock(GS5);
             end
             seq.addBlock(GSspr_end);
-        
+        end
 
-    end                                                                     %  comment for interleaved acquisition                
-    end                                                                     %  comment for interleaved acquisition
+       % end                                                                %  comment for interleaved acquisition                
+                                                                            
+ % end                                                                      %  comment for interleaved acquisition
                                                                            
     acqP.necho=nPEecho; %reset number of echoes
      toc
-    %return                                                                 % Uncomment for interleaved acquisition 
     
-                                                                            
-    %% check whether the timing of the sequence is correct
+ if(kex==nex)
+     %% check whether the timing of the sequence is correct
       disp('final calculations')                                                                      
      tic  
     [ok, error_report]=seq.checkTiming;
@@ -654,7 +677,7 @@ for kseq=1                                                                  %  c
         fprintf('\n');
     end
                                                                             
-  
+   if(kex==nex)
     %% k-space trajectory calculation
                                                                             
     [ktraj_adc, t_adc, ktraj, t_ktraj, t_excitation, t_refocusing] = seq.calculateKspacePP();
@@ -690,10 +713,10 @@ for kseq=1                                                                  %  c
         fig=seq.plot('TimeRange',[TRfill TRfill+0.02],'timeDisp','ms','stacked',1);
     end
     % seq.install('siemens');
-end
-
+   end
 toc
-   
+                                                                            end
+%end
 % [~, pns_n, pns_c, tpns]=seq.calcPNS('MP_GPA_K2309_2250V_951A_AS82.asc'); % prisma
 % [pns_ok, pns_n, pns_c, tpns]=seq.calcPNS('MP_GradSys_P034_X60.asc'); % Cima.X PNS
 % [~, pns_n, pns_c, tpns]=seq.calcPNS('MP_GPA_K2309_2250V_951A_AS82_prisma.asc'); % prisma

@@ -1,14 +1,14 @@
-function [PEorder,PEindex,NS,IPS] = PE_order(PEtype,NY,Necho,k0,PE_steps,HFfac,Nref,GRfac)
+function [PEorder,PEindex,NS,IPS] = PE_order(PEtype,NY,Necho,k0,PE_steps,HFfac,Nref,GRfac,PEcont)
+if(nargin<9), PEcont=0; end
 
 if(~isempty(PE_steps))
-    if(strcmp(PEtype,'faise')),
-        disp('PE-mode changed to centric encoding');
-        PEtype='centric';
-    end
+    PE_steps=sort(PE_steps,'ascend');
+    PEtype='linear';
+    disp('PE-ype changed to linear encoding');
 end
 
 if(isempty(PE_steps))
-    PE_first=floor(1+HFfac*NY/2);
+    PE_first=floor(1+HFfac*floor(NY/2));
     PE_ref=floor(NY/2-Nref/2);
     GRPElow=[PE_ref:-GRfac:PE_first];
     PE_steps=[GRPElow(end:-1:1) PE_ref+1:PE_ref+Nref-1 PE_ref+Nref:GRfac:NY];
@@ -18,6 +18,8 @@ if(isempty(PE_steps))
     else
         PE_steps=PE_steps(1:NS*Necho);
     end
+else
+    PE_steps=PE_steps+floor(NY/2);
 end
 nPE=length(PE_steps);
 NS=floor(nPE/Necho);
@@ -39,66 +41,31 @@ end
 switch PEtype
     case 'linear'
         %PE0=ind(end)+1;
-        PEorder=reshape(PE_steps,[NS Necho])'-NY/2;
-
-        [ke,ks]=find(PEorder==0);
+        PEorder=reshape(PE_steps,[NS Necho])'-floor(NY/2);
+        [ke,ks]=find(floor(PEorder)==0);
         PEorder=circshift(PEorder,[k0-ke(1) 0]);
 
-case {'centric'}
+    case {'centric','centric_s'}
+        PEcont=0;
         kn=PE_steps-floor(NY/2);
         ind=find(kn<0);
-        kn(ind)=-kn(ind)-0.5;
+        kn(ind)=-kn(ind)+0.5;
         kn=sort(kn);
         temp=kn-floor(kn);
         ind1=find(temp>0);
-        kn(ind1)=-kn(ind1)-0.5;
+        kn(ind1)=-kn(ind1)+0.5;
         kn=kn-min(kn)+1;
+        kn=kn-nPE0;
         knorder=reshape(kn,[NS Necho]);
-        [ke,ks]=find(knorder'==nPE0);
-        knorder=circshift(knorder',[-ke+k0 0]);
-        PEorder=PE_steps(knorder)-NY/2;
-
-
-
-
-
-
-
-        % ind=0;
-        % kn=0*PE_steps;
-        % kn(1)=ind(1);
-        % for k=1:floor(length(PE_steps)/2)
-        %     kn(2*(k-1)+2)=ind+k;
-        %     kn(2*(k-1)+3)=ind-k;
-        % end
-        % NS=floor(length(PE_steps)/Necho);
-        % kn=kn(1:NS*Necho);
-        % kn=kn-min(kn)+1;
-        % knorder=reshape(kn,[NS Necho]);
-        % [ke,ks]=find(knorder'==nPE0);
-        % knorder=circshift(knorder',[-ke+k0 0]);
-        % PEorder=PE_steps(knorder)-NY/2;
-
-    case {'centric_1'}
-        if(strcmp(PEtype,'centric'))
-            if(NS/2-floor(NS/2)>0)
-                disp('Warning! odd number of excitations may be not optimal for centric mode!')
-            end
+        if(strcmp(PEtype,'centric_s'))
+            PEorder=circshift(knorder,[0 k0]);
+        else
+            PEorder=knorder-knorder(floor(NS/2+1),k0);
         end
-        ind=0;
-        kn=0*PE_steps;
-        kn(1)=ind(1);
-        for k=1:floor(length(PE_steps)/2)
-            kn(2*(k-1)+2)=ind+k;
-            kn(2*(k-1)+3)=ind-k;
-        end
-        NS=floor(length(PE_steps)/Necho);
-        kn=kn(1:NS*Necho);
-        kn=kn-min(kn)+1;
-        knorder=reshape(kn,[NS Necho]);
-        [ke,ks]=find(knorder'==nPE0);
-        knorder=circshift(knorder',[-ke+k0 0]);
-        PEorder=PE_steps(knorder)-NY/2;
+        PEorder=PEorder';
+        ind=find(PEorder<-NY/2);
+
+
 
 
     case 'faise'
@@ -118,7 +85,7 @@ case {'centric'}
             knorder=knorder+NS/2*(k0-ke);
             knorder=mod(knorder-1,length(PE_steps))+1;
             PEorder=PE_steps(knorder);
-            PEorder=PEorder'-NY/2;
+            PEorder=PEorder'-floor(NY/2);
             [ke,ks]=find(knorder'==nPE0);
 
         else
@@ -147,22 +114,19 @@ case {'centric'}
             PEorder=PEorder';
         end
 
-    case 'paired'
-        ind=0;
-        kn=0*PE_steps;
-        kn(1)=ind(1);
-        for k=1:floor(length(PE_steps)/4)
-            kn(4*(k-1)+2)=ind+2*(k-1)+1;
-            kn(4*(k-1)+3)=ind+2*(k-1)+2;
-            kn(4*(k-1)+4)=ind-2*(k-1)-1;
-            kn(4*(k-1)+5)=ind-2*(k-1)-2;
-        end
-        kn=kn(1:length(PE_steps));
-        [ke,ks]=find(kn==nPE0);
-        knorder=circshift(kn,[-ke+k0 0])-min(kn)+1;
-        PEorder=PE_steps(knorder)-NY/2;
-
-
-
-
 end
+if(PEcont==1)
+    kk=0;
+    dPEorder=diff(PEorder(k0:end,:));
+    [inde,inds]=find(abs(dPEorder)>NY/2);
+    for k=1:length(inds)
+        PEorder(inde(k)+k0:end,inds(k))=PEorder(inde(k)+k0:end,inds(k))+sign(dPEorder(inde(k),inds(k)))*dPEorder(inde(k),inds(k))+dPEorder(inde(k)-1,inds(k));
+    end
+else
+    %PEorder=mod(PEorder,NY)-round(NY/2);
+end
+% if(PEcont==0)
+% 
+% else
+%     PEorder(ind)=PEorder(ind)+NY;
+% end
