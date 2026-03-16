@@ -1,19 +1,19 @@
-% very basic and crude non-cartesian recon using griddata()
-%%
-disp('select rawdata')
-[fnr, pnr] = uigetfile('*.dat', 'Select rawdata files','MultiSelect', 'on');
-if(iscell(fnr)), nir=numel(fnr); else nir=1; fnr={fnr}; end
-%%
-disp('select protocol(s)')
-[fnp, pnp] = uigetfile('*.mat', 'Select protocol files','MultiSelect', 'on');
-if(iscell(fnp)), nip=numel(fnp); else nip=1; fnp={fnp}; end
+%% FFT-reco for rawdata
+%  rawdata should be read in and placed in a matrix of size 
+% [(# of datapoints in adc) (number of adcs) (number of coils)]
+% performs FFT only, use your favorite tools for Half Fourier, POCS,
+% GRAPPA, nuFFT, ....
+
+
+
 %% Load datata
 nuFFTflag=0;
 FFTflag=1;
+pocsflag=0; 
 recnorm=0;r1=1;r2=5;ncut=0.5;
 mp=0;
 clear imsos imall ref_*
-for kim=1
+
     clear imcoil acqP acq kt* raw* ref*
 %% load data and parameters
     mp=mp+1
@@ -25,14 +25,6 @@ for kim=1
     if(acqP.GR_fac>1), grappaflag=1; end
     if(acqP.HF_fac>0.5), pocsflag=1; end
     wfac=0.5;
-    pocsflag=0;             % if you want to test reco without POCS
-    %grappaflag=0;           % if you want to test reco without GRAPPA
-    
-    cd(pnr)
-    rawname=cell2mat(fnr(:,kim));
-    twix_obj = mapVBVD(rawname);
-    %rawdata =double(twix_obj.image.unsorted());
-    rawdata = double(twix_obj{2}.image.unsorted());
 
     %% resort rawdata
     raw0=permute(rawdata,[1 3 2]);
@@ -168,31 +160,12 @@ for kim=1
     end
     %%
     if(grappaflag==1)
-        for ksl=1:acqP.NSlices*acqP.nrep
-            rawsl=squeeze(rawsl_tot(:,:,ksl,:));
-            try
-                GRAPPA_reco
-                rawslices(:,:,ksl,:)=rawsl_rec;
-            catch
-                disp(strcat('GRAPPA didnt work for :',fnp(kim),', slice',num2str(ksl)))
-            end
-        end
+        % here should be your favorite GRAPPA-reco
     end
 
     %%
     if(pocsflag==1)
-        for ksl=1:acqP.NSlices*acqP.nrep
-            rawsl=squeeze(rawslices(:,:,ksl,:));
-            rawsl=permute(rawsl,[3 1 2]);
-            rawsl(:,:,1)=0;
-            try
-                [im, rawpocs] = pocs(rawsl);
-                rawpocs=permute(rawpocs,[2 3 1]);
-                rawslices(:,:,ksl,:)=rawpocs;
-            catch
-                disp(strcat('pocs didnt work for ',fnp(kim),', slice',num2str(ksl)))
-            end
-        end
+        % here should be your favorite POCS-reco
     end
     %%
     zf=0;
@@ -231,7 +204,7 @@ for kim=1
         myTSE_reco_nufft
         imall_n(:,:,:,mp)=imsos_nuFFT;
     end
-end
+return
 %% extract navigators
 if(sum(acqP.navmode)>0),
     sipro=size(rawnav);
@@ -259,5 +232,3 @@ imall=temp1(:,:,slorder);
 imall(:,:,acqP.NSlices+1:2*acqP.NSlices)=temp2(:,:,slorder);
 %%
 
-script nufftreco
-x=1
