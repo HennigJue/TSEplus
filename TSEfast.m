@@ -10,7 +10,7 @@
 tic
 runseq=0;
 clear count* acqP acq
-plotflag='100001';
+plotflag='000101';
 acq.dG=100e-6; acq.dGs=100e-6;
 pulseflag_ex=0;
 pulseflag_ref=0;
@@ -25,8 +25,8 @@ B0=3;
 system.maxB1=2000;
 %%
 % A new sequence object is created by calling the class constructor.
-nseq=22;                                                                     %  comment for interleaved acquisition
-for kseq=12:21                                                               %  comment for interleaved acquisition
+nseq=1;                                                                     %  comment for interleaved acquisition
+for kseq=1                                                               %  comment for interleaved acquisition
     seq=mr.Sequence(system);                                                 %  comment for interleaved acquisition
 
     if(runseq==1), load('TSE_.mat');
@@ -39,22 +39,22 @@ for kseq=12:21                                                               %  
         acqP.sat_freq=acqP.sat_ppm*1e-6*B0*system.gamma;
         %% Sequence events
         % Some sequence parameters are defined using standard MATLAB variables
-        acqP.fov=200e-3;
-        acqP.Nx=200;        acqP.Ny=200;        acqP.PEfac=acqP.Nx/acqP.Ny;     %=1:same fov; =acqP.Nx/acqP.Ny:same res
-        acqP.necho=200;
-        acqP.samplingTime= 2.8e-3;                                              %should be a multiple of Nx in microseconds
-        acqP.NSlices=21;     acqP.sliceGAP=3;  acqP.sliceThickness=4e-3;
-        acqP.flipref=40;   acqP.flipflag=4;
-        acqP.TE=4e-3;      acqP.TEeff=80e-3;   acqP.TEprep=30e-3; acqP.dTE=0.0e-3;
+        acqP.fov=240e-3;
+        acqP.Nx=100;        acqP.Ny=100;        acqP.PEfac=acqP.Nx/acqP.Ny;     %=1:same fov; =acqP.Nx/acqP.Ny:same res
+        acqP.necho=100;
+        acqP.samplingTime= 2e-3;                                              %should be a multiple of Nx in microseconds
+        acqP.NSlices=1;     acqP.sliceGAP=3;  acqP.sliceThickness=5e-3;
+        acqP.flipref=90;   acqP.flipflag=4;
+        acqP.TE=8e-3;      acqP.TEeff=40e-3;   acqP.TEprep=30e-3; acqP.dTE=0.0e-3;
         acqP.TR=16;       acqP.TI=0e-3;       acqP.TImod=1;
         acqP.HF_fac=0.9;      acqP.PEref=20;      acqP.GR_fac=2;
-        acqP.PEtype='centric';   acqP.PEover=0;
-        acqP.nDummy=0;  % =0: dummy scan will be performed
+        acqP.PEtype='linear';   acqP.PEover=0;
+        acqP.nDummy=1;  % =0: dummy scan will be performed
 
         % acqP-parameters related to special acquisition modes.
         acqP.GRramp=0;
         acqP.nrep=1;
-        acqP.navmode=[0 0 0];  acqP.navk=5;                                     % navigator echoes at beginning and end of echotrain
+        acqP.navmode=[2 2 2];  acqP.navk=5;                                     % navigator echoes at beginning and end of echotrain
         acqP.wav=[1];    acqP.wavmode='cont';    acqP.PEinc=0;
         acqP.GDs=0;
         acqP.GDx=0;
@@ -65,15 +65,15 @@ for kseq=12:21                                                               %  
         acq.accfac=1;
         acq.sigpy='off';
         acq.cpmg_mod='const';
-        acq.tSpS=0.3e-3;
-        acq.tEx=0.7e-3;
-        acq.tBwPex=2;
-        acq.ExApo=0.25;
+        acq.tSpS=1e-3;
+        acq.tEx=1e-3;
+        acq.tBwPex=4;
+        acq.ExApo=0.5;
         tExwd=acq.tEx+system.rfRingdownTime+system.rfDeadTime;
         acq.nPinit=1;
-        acq.tRef=0.5e-3;
-        acq.tBwPref=0.5;
-        acq.RefApo=0.4;
+        acq.tRef=1e-3;
+        acq.tBwPref=4;
+        acq.RefApo=0.5;
         tRefwd=acq.tRef+system.rfRingdownTime+system.rfDeadTime;
         acq.tRefSE=4e-3;
         acq.tBwPrefSE=8;
@@ -84,8 +84,8 @@ for kseq=12:21                                                               %  
         acq.GSrefFac=1;
         acq.GSSEfac=1;
         acq.GSIRFac=1;
-        acq.fspR=2;
-        acq.fspS=3;
+        acq.fspR=1;
+        acq.fspS=1;
         acq.spoilermode='amp';
         %slice order factor
         if(nseq>1), myTSE_para;  end
@@ -151,7 +151,7 @@ for kseq=12:21                                                               %  
     acq.GSex=GSex.amplitude;
 
     [rfref0, gzref] = mr.makeSincPulse(pi,system,'Duration',acq.tRef,...
-        'sliceThickness',acqP.sliceThickness,'apodization',0,'timeBwProduct',acq.tBwPref,'PhaseOffset',rfref_phase,'use','refocusing');
+        'sliceThickness',acqP.sliceThickness,'apodization',0.5,'timeBwProduct',acq.tBwPref,'PhaseOffset',rfref_phase,'use','refocusing');
     rfref.delay=system.rfRingdownTime;
     GSref = mr.makeTrapezoid('z',system,'amplitude',gzref.amplitude,'FlatTime',tRefwd,'riseTime',acq.dG);
     GSref.amplitude=acq.GSrefFac*GSref.amplitude;
@@ -698,15 +698,15 @@ for kseq=12:21                                                               %  
                 end
 
                 if(strcmp(acq.cpmg_mod,'alt')), rfref.phaseOffset=rfref_phase-2*pi*rfref.freqOffset*mr.calcRfCenter(rfref); end
+                
                 if((kech==1)&&acqP.navmode(1)==2)
                     seq.addBlock(GRresp,GPResp,GSesp,adc,rfref);
-
                 elseif((kech==1)&&acqP.navmode(1)==3)
                     seq.addBlock(GRresp,GSResp,adc,rfref);
 
-                elseif((kech==acqP.navk)&&acqP.navmode(1)==2)
+                elseif((kech==acqP.navk)&&acqP.navmode(2)==2)
                     seq.addBlock(GRresp,GPResp,GSesp,adc,rfref);
-                elseif((kech==acqP.navk)&&acqP.navmode(1)==3)
+                elseif((kech==acqP.navk)&&acqP.navmode(2)==3)
                     seq.addBlock(GRresp,GSResp,adc,rfref);
 
                 elseif((kech==acqP.necho)&&acqP.navmode(3)==2)
@@ -786,7 +786,7 @@ for kseq=12:21                                                               %  
     %%
 
     if(plotflag(6)=='1')
-        fig=seq.plot('TimeRange',[TRfill TRfill+0.02],'timeDisp','ms','stacked',1);
+        fig=seq.plot('TimeRange',[TRfill TRfill+0.2],'timeDisp','ms','stacked',1);
         %fig=seq.plot('TimeRange',[0 0.1],'timeDisp','ms','stacked',1);
     end
 end

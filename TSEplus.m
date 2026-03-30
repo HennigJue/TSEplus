@@ -28,12 +28,12 @@ system.maxB1=2000;
 %%
 % A new sequence object is created by calling the class constructor.
 nseq=1;                                                                     %  comment for interleaved acquisition
-for kseq=1                                                                  %  comment for interleaved acquisition
+for kseq=1                                                                %  comment for interleaved acquisition
     seq=mr.Sequence(system);                                                %  comment for interleaved acquisition
     if(runseq==1), load('TSE_.mat');                                        
     else
         
-        acqP.T2prep='off';
+        acqP.T2prep='on';
         acqP.fatsat='off';
         acqP.flipback='off';
         acqP.sat_ppm=-3.45;
@@ -41,20 +41,20 @@ for kseq=1                                                                  %  c
         %% Sequence events
         % Some sequence parameters are defined using standard MATLAB variables
         acqP.fov=240e-3;
-        acqP.Nx=320;        acqP.Ny=200;        acqP.PEfac=acqP.Nx/acqP.Ny; %=1:same fov; =acqP.Nx/acqP.Ny:same res
-        acqP.necho=20;
+        acqP.Nx=240;        acqP.Ny=240;        acqP.PEfac=acqP.Nx/acqP.Ny; %=1:same fov; =acqP.Nx/acqP.Ny:same res
+        acqP.necho=12;
         acqP.samplingTime= 4.8e-3;                                           %should be a multiple of Nx in microseconds
-        acqP.NSlices=1;     acqP.sliceGAP=3;  acqP.sliceThickness=2e-3;
-        acqP.flipref=90;   acqP.flipflag=4;
-        acqP.TE=10e-3;      acqP.TEeff=100e-3;   acqP.TEprep=40e-3; acqP.dTE=0.0e-3;
-        acqP.TR=6;       acqP.TI=0e-3;       acqP.TImod=1;
-        acqP.HF_fac=0;      acqP.PEref=20;       acqP.GR_fac=1;
-        acqP.PEtype='centric_s';    acqP.PEover=0;
-        acqP.nDummy=0;  % =0: dummy scan will be performed
+        acqP.NSlices=1;     acqP.sliceGAP=3;  acqP.sliceThickness=5e-3;
+        acqP.flipref=120;   acqP.flipflag=4;
+        acqP.TE=10e-3;      acqP.TEeff=80e-3;   acqP.TEprep=50e-3; acqP.dTE=0.7e-3;
+        acqP.TR=4.5;       acqP.TI=0e-3;       acqP.TImod=1;
+        acqP.HF_fac=0;      acqP.PEref=20;       acqP.GR_fac=2;
+        acqP.PEtype='linear';    acqP.PEover=0;
+        acqP.nDummy=1;  % =0: dummy scan will be performed
         % acqP-paramters related to special acquisition modes.
         acqP.GRramp=0;
         acqP.nrep=1;
-        acqP.navmode=[0 0 0];         % navigator echoes at beginning and end of echotrain
+        acqP.navmode=[3 2 1];         % navigator echoes at beginning and end of echotrain
         acqP.wav=[1];    acqP.wavmode='cont';    acqP.PEinc=0;
         acqP.GDs=0;
         acqP.GDx=0;
@@ -64,7 +64,7 @@ for kseq=1                                                                  %  c
 
         %%  acq-Parameters
         acq.accfac=2;
-        acq.sigpy='off';
+        acq.sigpy='on';
         acq.cpmg_mod='const';
         acq.tEx=2e-3;
         acq.tBwPex=4;
@@ -82,7 +82,7 @@ for kseq=1                                                                  %  c
         acq.GSSEfac=1;
         acq.GSIRFac=1;
         acq.fspR=0.5;
-        acq.fspS=0.8;
+        acq.fspS=1;
         acq.spoilermode='area';
         %slice order factor
         if(nseq>1), myTSE_para;  end
@@ -104,8 +104,8 @@ for kseq=1                                                                  %  c
         disp('TEeff was adpated to include navigator echoes')
         k0=1
     end
-    if(strcmp(acqP.T2prep,'on')&&(acqP.navmode(1)==2))
-        disp('PE-navigator in first echo is not compatible with acqP.T2prep=on, navigator will be in read direction')
+    if(strcmp(acqP.T2prep,'on')&&(acqP.navmode(1)>1))
+        disp('Only navigator in readout direction is allowed in first echo for acqP.T2prep=on')
         acqP.navmode(1)=1;
     end
     tExwd=acq.tEx+system.rfRingdownTime+system.rfDeadTime;
@@ -278,6 +278,7 @@ for kseq=1                                                                  %  c
         end
     end
     acqP.PEorder0=acqP.PEorder;
+    
     if(acqP.navmode(1)>0)
         siPE=size(acqP.PEorder);
         temp=zeros([siPE(1)+1 siPE(2)]);
@@ -364,8 +365,8 @@ for kseq=1                                                                  %  c
         GSpredur=system.gradRasterTime*floor(readoutTime/4/system.gradRasterTime);
         GSread = mr.makeTrapezoid('z',system,'Amplitude',5e5,'Duration',readoutTime-2*GSpredur,'riseTime',acq.dG);
         GSprew=mr.makeTrapezoid('z',system,'Area',-GSread.area/2,'Duration',GSpredur,'riseTime',acq.dG);
-        GSacqtimes=[0 acq.dG GSpredur-acq.dG GSpredur GSpredur+acq.dG GSpredur+acq.dG+GSread.flatTime readoutTime-GSpredur readoutTime-GSpredur+acq.dG readoutTime-acq.dG readoutTime]
-        GSacqamp=[0 GSprew.amplitude GSprew.amplitude 0 GSread.amplitude GSread.amplitude 0 GSprew.amplitude GSprew.amplitude 0 ]
+        GSacqtimes=[0 acq.dG GSpredur-acq.dG GSpredur GSpredur+acq.dG GSpredur+acq.dG+GSread.flatTime readoutTime-GSpredur readoutTime-GSpredur+acq.dG readoutTime-acq.dG readoutTime];
+        GSacqamp=[0 GSprew.amplitude GSprew.amplitude 0 GSread.amplitude GSread.amplitude 0 GSprew.amplitude GSprew.amplitude 0 ];
         %plot(GSacqtimes,GSacqamp)
         GSacq = mr.makeExtendedTrapezoid('z','times',GSacqtimes,'amplitudes',GSacqamp);
     end
@@ -597,7 +598,13 @@ for kseq=1                                                                  %  c
                     seq.addBlock(GS7,GR7,GPrew);
                 else
                     seq.addBlock(GS4,rfref);
+
+                   
                     if((kech==1)&&acqP.navmode(1)==2)
+                        seq.addBlock(GS5,GRrew,GPR5);
+                        seq.addBlock(GPRacq,adc);
+                        seq.addBlock(GS7,GRrew,GPR7);
+                    elseif((kech==2)&&acqP.navmode(2)==2)
                         seq.addBlock(GS5,GRrew,GPR5);
                         seq.addBlock(GPRacq,adc);
                         seq.addBlock(GS7,GRrew,GPR7);
@@ -605,6 +612,14 @@ for kseq=1                                                                  %  c
                         seq.addBlock(GS5,GRrew,GPR5);
                         seq.addBlock(GPRacq,adc);
                         seq.addBlock(GS7,GRrew,GPR7);
+                    elseif((kech==1)&&acqP.navmode(1)==3)
+                        seq.addBlock(GS5,GRrew);
+                        seq.addBlock(GSacq,adc);
+                        seq.addBlock(GS7,GRrew);
+                    elseif((kech==2)&&acqP.navmode(2)==3)
+                        seq.addBlock(GS5,GRrew);
+                        seq.addBlock(GSacq,adc);
+                        seq.addBlock(GS7,GRrew);
                     elseif((kech==acqP.necho)&&acqP.navmode(3)==3)
                         seq.addBlock(GS5,GRrew);
                         seq.addBlock(GSacq,adc);
@@ -687,11 +702,10 @@ for kseq=1                                                                  %  c
     %%
 
     if(plotflag(6)=='1')
-        fig=seq.plot('TimeRange',[TRfill TRfill+0.02],'timeDisp','ms','stacked',1);
+        fig=seq.plot('TimeRange',[TRfill TRfill+0.2],'timeDisp','ms','stacked',1);
     end
     % seq.install('siemens');
 end
 
 toc
- 
 
